@@ -15,7 +15,7 @@ class ConsulRegistry(RegistryClient):
         self.token = token
 
     # -------------------- 服务注册 --------------------
-    def register_service(self, service_name, service_id, address, port, protocol="http", deregister_critical_service_after="90s", ttl="30s"):
+    def register_service(self, service_name, service_id, address, port, protocol="http", deregister_critical_service_after="10s", ttl="30s"):
         """
         使用TTL检查注册服务，替代原来的HTTP/TCP检查
         :param service_name: 服务名称
@@ -26,8 +26,11 @@ class ConsulRegistry(RegistryClient):
         :param deregister_critical_service_after: 服务失效后多久注销
         :param ttl: TTL检查间隔
         """
-        # 使用TTL检查替代HTTP/TCP检查
+        # 使用TTL检查替代HTTP/TCP检查，并添加deregister_critical_service_after配置
         check = consul.Check.ttl(ttl)
+        # 手动添加DeregisterCriticalServiceAfter字段
+        check['DeregisterCriticalServiceAfter'] = deregister_critical_service_after
+        
         result = self.client.agent.service.register(
             name=service_name, service_id=service_id, address=address, port=port, check=check
         )
