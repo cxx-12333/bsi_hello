@@ -1,0 +1,23 @@
+# Consul配置文件
+# 用于配置Hello Service项目所需的各项配置
+
+# 配置的key path是bsi/hello_py，但路径下的配置不带bsi/hello_py:这个父级
+# 对应bootstrap.py中的 config_path 路径 (默认为 bsi/hello_py)
+app_setting:
+  environment: dev
+
+database:
+  database: bsi_hello_py
+  host: localhost
+  password: Hello_py_Micro123!sjzy==
+  port: '3306'
+  user: bsi_hello_py_micro_app
+
+redis:
+  db: 0
+  host: redis-dev.default.svc.cluster.local
+  port: 6379
+  password: gaVEHR3V7qiY
+
+# 注意: service和otlp配置不在Consul配置中，它们是本地默认配置
+# 如果需要通过Consul配置这些值，需要修改bootstrap.py中的init_from_consul方法

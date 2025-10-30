@@ -1,0 +1,16 @@
+﻿# Hello Service
+
+基于FastAPI和gRPC的用户服务示例项目。
+
+## 技术栈
+
+- MVC框架: FastAPI
+- 通信协议: gRPC (服务间通信)
+- ORM框架: SQLAlchemy 2.x + Alembic + sqlacodegen-v2
+- 分布式锁: Redis + Redlock
+- 服务发现: Consul
+- 配置中心: Consul
+- 日志框架: loguru + structlog + OpenTelemetry
+
+## 项目结构
+
