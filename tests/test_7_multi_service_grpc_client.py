@@ -7,7 +7,6 @@ import unittest
 import asyncio
 import sys
 import os
-import logging
 
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -15,19 +14,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 # 导入公共初始化方法
 from tests.common import init_config_from_consul
 
+# 导入项目日志系统
+from app.internal.log.logger import init_logger, logger
+
 from app.containers.application_container import ApplicationContainer
 from app.internal.client.user_service_client import UserServiceClient
 from app.internal.client.notification_service_client import NotificationServiceClient
 from app.internal.client.multi_service_grpc_client import MultiServiceGrpcClient
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-# 获取日志记录器
-logger = logging.getLogger(__name__)
+# 初始化日志系统
+init_logger()
 
 
 class TestMultiServiceGrpcClient(unittest.IsolatedAsyncioTestCase):
@@ -97,7 +93,7 @@ class TestMultiServiceGrpcClient(unittest.IsolatedAsyncioTestCase):
 
         # 连接到通知服务
         logger.info("   连接到通知服务...")
-        connected = await notification_client.connect("")
+        connected = await notification_client.connect("bsi.hello_py.grpc")
         self.assertTrue(connected, "连接通知服务失败")
         logger.info("   连接通知服务成功")
 
