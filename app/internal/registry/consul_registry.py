@@ -34,7 +34,7 @@ class ConsulRegistry(RegistryClient):
         result = self.client.agent.service.register(
             name=service_name, service_id=service_id, address=address, port=port, check=check
         )
-        
+
         if result:
             # 注册成功后立即更新一次健康状态，避免初始状态为critical
             try:
@@ -44,7 +44,7 @@ class ConsulRegistry(RegistryClient):
                 params = []
                 if self.token:
                     params.append(('token', self.token))
-                
+
                 # 使用Consul客户端的HTTP PUT方法直接调用API
                 from consul.base import CB
                 self.client.http.put(
@@ -58,7 +58,7 @@ class ConsulRegistry(RegistryClient):
         else:
             logger.error(f"服务 {service_id} 注册失败")
             return False
-        
+
         # 启动健康状态更新线程
         self._start_health_updates(service_id, ttl)
         return result
@@ -75,19 +75,19 @@ class ConsulRegistry(RegistryClient):
             # 设置最大重试次数
             max_retries = 5
             retry_count = 0
-            
+
             # 使用正确的检查ID格式：service:{service_id}
             check_id = f"service:{service_id}"
-            
+
             logger.info(f"开始健康状态更新线程，服务ID: {service_id}, 检查ID: {check_id}, 更新间隔: {interval}秒")
-            
+
             while True:
                 try:
                     # 直接构造HTTP请求并手动传递token参数
                     params = []
                     if self.token:
                         params.append(('token', self.token))
-                    
+
                     # 使用Consul客户端的HTTP PUT方法直接调用API
                     from consul.base import CB
                     self.client.http.put(
@@ -95,25 +95,25 @@ class ConsulRegistry(RegistryClient):
                         f'/v1/agent/check/pass/{check_id}',
                         params=params
                     )
-                    
+
                     logger.debug(f"服务 {service_id} 健康状态已更新")
                     # 重置重试计数
                     retry_count = 0
-                    
+
                     # 记录成功更新健康状态的日志
                     # logger.info(f"服务 {service_id} 健康状态更新成功")
                 except Exception as e:
                     retry_count += 1
                     logger.error(f"更新服务 {service_id} 健康状态失败 (尝试 {retry_count}/{max_retries}): {e}")
-                    
+
                     # 如果达到最大重试次数，记录警告但继续尝试
                     if retry_count >= max_retries:
                         logger.warning(f"服务 {service_id} 健康状态更新连续失败 {max_retries} 次，将继续尝试")
                         retry_count = 0  # 重置计数，避免日志重复
-                
+
                 # 睡眠指定间隔
                 time.sleep(interval)
-        
+
         # 启动健康检查线程
         thread_name = f"consul-health-{service_id}"
         thread = threading.Thread(target=_update_health, daemon=True, name=thread_name)
@@ -140,13 +140,19 @@ class ConsulRegistry(RegistryClient):
     def deregister_service(self, service_id):
         try:
             # 使用Consul Python库的正确API调用方式
+            # 通过params传递token参数
+            params = []
+            if self.client.token:
+                params.append(('token', self.client.token))
+            
+            # 调用Consul库的deregister方法并传递参数
             result = self.client.agent.service.deregister(service_id)
             
             # 停止健康状态更新线程
             if service_id in self._health_threads:
                 # 线程是守护线程，不需要显式停止，从字典中移除引用即可
                 del self._health_threads[service_id]
-            
+
             if result:
                 logger.info(f"成功注销服务: {service_id}")
             else:
