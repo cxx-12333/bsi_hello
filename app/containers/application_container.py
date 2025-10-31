@@ -54,9 +54,8 @@ class ApplicationContainer(containers.DeclarativeContainer):
         service_container=service_container
     )
     
-    # gRPC容器
-    grpc_container = providers.Container(
-        GrpcContainer,
+    # gRPC容器 - 使用providers.Factory确保正确类型和方法
+    grpc_container = providers.Factory(GrpcContainer,
         config=config,
         root_container=root_container,
         data_access_container=data_access_container,
@@ -65,9 +64,3 @@ class ApplicationContainer(containers.DeclarativeContainer):
     
     # 客户端容器
     client_container = providers.Container(ClientContainer)
-
-    # # 直接暴露常用的服务
-    # user_service = providers.Factory(
-    #     lambda service_container: service_container.user_service(),
-    #     service_container=service_container
-    # )

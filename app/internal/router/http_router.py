@@ -1,38 +1,19 @@
-import uvicorn
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from fastapi import FastAPI
-from app.api.router_health import router as health_router
-from app.internal.config.bootstrap import Bootstrap
 from loguru import logger
 
+from app.api.router_health import router as health_router
 
-async def start_http(app: FastAPI, container, bootstrap: Bootstrap):
-    """启动HTTP服务"""
-    # 添加健康检查路由
-    app.include_router(health_router)
-    
-    # 添加用户路由
+
+def setup_routes(app: FastAPI, container):
+    """设置HTTP路由"""
+    # 注册用户路由
     user_router = container.api_container().user_router()
-    app.include_router(user_router)
+    app.include_router(user_router, prefix="/api/v1")
     
-    config = uvicorn.Config(
-        app, 
-        host="0.0.0.0", 
-        port=bootstrap.service.http_port, 
-        log_level="info"
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
-
-
-def register_http_services(registry, bootstrap, local_ip):
-    """注册HTTP服务到注册中心"""
-    http_service_name = f"{bootstrap.service.name}.http"
-    http_service_id = f"{bootstrap.service.name}-http"
+    # 注册健康检查路由
+    app.include_router(health_router, prefix="")
     
-    registry.register_service(
-        http_service_name, 
-        http_service_id, 
-        local_ip, 
-        bootstrap.service.http_port, 
-        "http"
-    )
+    logger.info("HTTP routes registered successfully")

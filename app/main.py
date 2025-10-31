@@ -6,6 +6,7 @@ import asyncio
 import os
 import socket
 import sys
+import signal
 from functools import lru_cache
 from urllib.parse import urlparse
 
@@ -15,12 +16,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.containers.root_container import RootContainer
 from app.internal.config.bootstrap import Bootstrap
 from app.internal.registry.consul_registry import ConsulRegistry
+from app.internal.registry.base import RegistryClient
 from app.internal.server.application import Application
-from app.internal.router import register_http_services, register_grpc_services
-from app.internal.utils import get_local_ip
 from loguru import logger
-
-
 
 # -------------------- 命令行参数解析 --------------------
 def parse_args():
@@ -85,25 +83,18 @@ async def main():
         logger.error("Failed to initialize configurations from Consul")
         return
     
-    # 注册服务
-    local_ip = bootstrap.registry.local_ip if bootstrap.registry.local_ip else get_local_ip()
-    register_http_services(registry, bootstrap, local_ip)
-    register_grpc_services(registry, bootstrap, local_ip)
-    
     # 初始化依赖注入容器
     from app.containers.application_container import ApplicationContainer
     container = ApplicationContainer()
     
     # 创建应用实例并运行
     application = Application(bootstrap)
-    await application.run(container)
+    await application.run(container, registry)
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("程序被用户中断")
-        sys.exit(0)
     except Exception as e:
         logger.error(f"程序运行出错: {e}")
-        sys.exit(1)

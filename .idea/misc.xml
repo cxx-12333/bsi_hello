@@ -3,4 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="uv (bsi_hello)" />
   </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="uv (hello)" project-jdk-type="Python SDK" />
 </project>

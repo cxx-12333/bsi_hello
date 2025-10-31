@@ -26,8 +26,11 @@ class ConsulRegistry(RegistryClient):
         :param deregister_critical_service_after: 服务失效后多久注销
         :param ttl: TTL检查间隔
         """
-        # 使用TTL检查替代HTTP/TCP检查
+        # 使用TTL检查替代HTTP/TCP检查，并添加deregister_critical_service_after配置
         check = consul.Check.ttl(ttl)
+        # 手动添加DeregisterCriticalServiceAfter字段
+        check['DeregisterCriticalServiceAfter'] = deregister_critical_service_after
+
         result = self.client.agent.service.register(
             name=service_name, service_id=service_id, address=address, port=port, check=check
         )
@@ -147,10 +150,20 @@ class ConsulRegistry(RegistryClient):
             if result:
                 logger.info(f"成功注销服务: {service_id}")
             else:
-                logger.info(f"注销服务失败: {service_id}")
+                # 当result为False时，尝试获取更多关于服务状态的信息
+                try:
+                    # 尝试查询服务是否存在来提供更多上下文信息
+                    services = self.client.agent.services()
+                    if service_id in services:
+                        logger.error(f"注销服务失败: {service_id}，服务仍然存在于Consul中")
+                    else:
+                        logger.error(f"注销服务失败: {service_id}，服务可能已被删除或不存在")
+                except Exception as query_e:
+                    logger.error(f"注销服务失败: {service_id}，无法查询服务状态: {str(query_e)}")
             return result
         except Exception as e:
-            logger.error(f"注销服务 {service_id} 失败: {e}")
+            # 记录详细的错误信息，包括异常类型和消息
+            logger.error(f"注销服务 {service_id} 失败: {str(e)}")
             return False
 
     # -------------------- 服务发现 --------------------
